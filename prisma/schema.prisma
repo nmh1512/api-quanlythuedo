@@ -1,0 +1,201 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum ProductItemStatus {
+  available
+  rented
+  maintenance
+  retired
+}
+
+enum RentalStatus {
+  pending
+  confirmed
+  renting
+  returned
+  late
+  cancelled
+}
+
+enum CalendarStatus {
+  reserved
+  renting
+  blocked
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  email     String    @unique
+  password  String
+  name      String?
+  role      String    @default("user") // "admin", "staff", "user"
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  rentals Rental[]
+
+  @@map("users")
+}
+
+model Branch {
+  id        Int       @id @default(autoincrement())
+  name      String
+  address   String
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  productItems ProductItem[]
+  rentals      Rental[]
+
+  @@map("branches")
+}
+
+model Category {
+  id        Int       @id @default(autoincrement())
+  name      String
+  parentId  Int?      @map("parent_id")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  parent   Category?  @relation("CategoryToCategory", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryToCategory")
+  products Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id          Int       @id @default(autoincrement())
+  name        String
+  description String?
+  basePrice   Decimal   @default(0) @map("base_price") // Base rental price per day
+  categoryId  Int       @map("category_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  category      Category       @relation(fields: [categoryId], references: [id])
+  productImages ProductImage[]
+  productItems  ProductItem[]
+
+  @@map("products")
+}
+
+model ProductImage {
+  id        Int      @id @default(autoincrement())
+  productId Int      @map("product_id")
+  url       String
+  isPrimary Boolean  @default(false) @map("is_primary")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("product_images")
+}
+
+model ProductItem {
+  id        Int               @id @default(autoincrement())
+  productId Int               @map("product_id")
+  branchId  Int               @map("branch_id")
+  itemCode  String            @unique @map("item_code") // e.g. BARCODE-001
+  status    ProductItemStatus @default(available)
+  condition String?
+  createdAt DateTime          @default(now()) @map("created_at")
+  updatedAt DateTime          @updatedAt @map("updated_at")
+  deletedAt DateTime?         @map("deleted_at")
+
+  product         Product          @relation(fields: [productId], references: [id])
+  branch          Branch           @relation(fields: [branchId], references: [id])
+  rentalItems     RentalItem[]
+  rentalCalendars RentalCalendar[]
+
+  @@map("product_items")
+}
+
+model Rental {
+  id         Int          @id @default(autoincrement())
+  userId     Int          @map("user_id") // Customer
+  branchId   Int          @map("branch_id")
+  status     RentalStatus @default(pending)
+  totalPrice Decimal      @default(0) @map("total_price")
+  deposit    Decimal      @default(0)
+  startDate  DateTime     @map("start_date")
+  endDate    DateTime     @map("end_date")
+  createdAt  DateTime     @default(now()) @map("created_at")
+  updatedAt  DateTime     @updatedAt @map("updated_at")
+  deletedAt  DateTime?    @map("deleted_at")
+
+  user            User             @relation(fields: [userId], references: [id])
+  branch          Branch           @relation(fields: [branchId], references: [id])
+  rentalItems     RentalItem[]
+  payments        Payment[]
+  penalties       Penalty[]
+  rentalCalendars RentalCalendar[]
+
+  @@map("rentals")
+}
+
+model RentalItem {
+  id            Int      @id @default(autoincrement())
+  rentalId      Int      @map("rental_id")
+  productItemId Int      @map("product_item_id")
+  price         Decimal  @default(0) // Price at time of rental
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  rental      Rental      @relation(fields: [rentalId], references: [id])
+  productItem ProductItem @relation(fields: [productItemId], references: [id])
+
+  @@map("rental_items")
+}
+
+model RentalCalendar {
+  id            Int            @id @default(autoincrement())
+  productItemId Int            @map("product_item_id")
+  rentalId      Int?           @map("rental_id")
+  date          DateTime       @db.Date
+  status        CalendarStatus
+  createdAt     DateTime       @default(now()) @map("created_at")
+  deletedAt     DateTime?      @map("deleted_at")
+
+  productItem ProductItem @relation(fields: [productItemId], references: [id])
+  rental      Rental?     @relation(fields: [rentalId], references: [id])
+
+  @@index([productItemId, date])
+  @@map("rental_calendars")
+}
+
+model Payment {
+  id        Int      @id @default(autoincrement())
+  rentalId  Int      @map("rental_id")
+  amount    Decimal
+  method    String // "cash", "card", "transfer"
+  status    String // "pending", "completed", "failed"
+  createdAt DateTime @default(now()) @map("created_at")
+
+  rental Rental @relation(fields: [rentalId], references: [id])
+
+  @@map("payments")
+}
+
+model Penalty {
+  id        Int      @id @default(autoincrement())
+  rentalId  Int      @map("rental_id")
+  amount    Decimal
+  reason    String
+  isPaid    Boolean  @default(false) @map("is_paid")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  rental Rental @relation(fields: [rentalId], references: [id])
+
+  @@map("penalties")
+}
