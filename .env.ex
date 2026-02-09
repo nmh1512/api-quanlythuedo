@@ -1,0 +1,10 @@
+DATABASE_URL="mysql://root@localhost:3306/quanlythuedo"
+JWT_SECRET="super-secret-key-123"
+PORT=3000
+
+DATABASE_HOST=localhost
+DATABASE_USER=root
+DATABASE_PASSWORD=
+DATABASE_NAME=quanlythuedo
+DATABASE_PORT=3306
+DATABASE_CONNECTION_LIMIT=5
