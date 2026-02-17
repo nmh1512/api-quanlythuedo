@@ -13,7 +13,7 @@ export class ProductsService {
                 OR: [
                     { name: { contains: q } },
                     { description: { contains: q } },
-                    { 
+                    {
                         productItems: {
                             some: {
                                 itemCode: { contains: q }
@@ -38,17 +38,78 @@ export class ProductsService {
         return product;
     }
 
-    async create(dto: CreateProductDto) {
+    async create(dto: any, file?: any) {
+        const images = this.parseImagesFromDto(dto);
+
+        if (file) {
+            images.push({ url: `/uploads/${file.filename}`, isPrimary: true });
+        }
+
         return this.productRepository.create({
             name: dto.name,
             description: dto.description,
-            basePrice: dto.basePrice,
-            category: { connect: { id: dto.categoryId } },
+            basePrice: Number(dto.basePrice),
+            category: { connect: { id: Number(dto.categoryId) } },
+            productImages: images.length > 0 ? {
+                create: images.map(img => ({
+                    url: img.url,
+                    isPrimary: String(img.isPrimary) === 'true'
+                }))
+            } : undefined,
         });
     }
 
-    async update(id: number, dto: UpdateProductDto) {
-        return this.productRepository.update(id, dto);
+    async update(id: number, dto: any, file?: any) {
+        const { productImages, categoryId, ...data } = dto;
+        const updateData: any = { ...data };
+
+        if (data.basePrice) updateData.basePrice = Number(data.basePrice);
+
+        if (categoryId) {
+            updateData.category = { connect: { id: Number(categoryId) } };
+        }
+
+        const images = this.parseImagesFromDto(dto);
+        if (file) {
+            images.push({ url: `/uploads/${file.filename}`, isPrimary: true });
+        }
+
+        if (images.length > 0 || dto.productImages) {
+            updateData.productImages = {
+                deleteMany: {},
+                create: images.map(img => ({
+                    url: img.url,
+                    isPrimary: String(img.isPrimary) === 'true'
+                }))
+            };
+        }
+
+        return this.productRepository.update(id, updateData);
+    }
+
+    private parseImagesFromDto(dto: any): any[] {
+        if (dto.productImages && Array.isArray(dto.productImages)) {
+            return dto.productImages;
+        }
+
+        // Handle flat FormData keys like productImages[0][url]
+        const images: any[] = [];
+        const imageKeys = Object.keys(dto).filter(key => key.startsWith('productImages['));
+
+        imageKeys.forEach(key => {
+            const indexMatch = key.match(/\[(\d+)\]/);
+            const propMatch = key.match(/\]\[(\w+)\]/);
+
+            if (indexMatch && propMatch) {
+                const index = parseInt(indexMatch[1]);
+                const prop = propMatch[1];
+
+                if (!images[index]) images[index] = {};
+                images[index][prop] = dto[key];
+            }
+        });
+
+        return images.filter(img => img && img.url);
     }
 
     async remove(id: number) {

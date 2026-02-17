@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/database/prisma.service';
-import { Rental, Prisma } from '@prisma/client';
+import { Rental, Prisma } from '@/generated/prisma/client';
 
 @Injectable()
 export class RentalRepository {
@@ -20,13 +20,17 @@ export class RentalRepository {
                 deletedAt: null,
             },
             include: {
-                user: true,
+                customer: true,
                 branch: true,
                 rentalItems: {
                     include: {
                         productItem: {
                             include: {
-                                product: true,
+                                product: {
+                                    include: {
+                                        productImages: true,
+                                    },
+                                },
                             },
                         },
                     },
@@ -39,13 +43,17 @@ export class RentalRepository {
         return this.prisma.rental.findUnique({
             where: { id, deletedAt: null },
             include: {
-                user: true,
+                customer: true,
                 branch: true,
                 rentalItems: {
                     include: {
                         productItem: {
                             include: {
-                                product: true,
+                                product: {
+                                    include: {
+                                        productImages: true,
+                                    },
+                                },
                             },
                         },
                     },

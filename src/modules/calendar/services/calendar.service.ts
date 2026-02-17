@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { RentalCalendarRepository } from '../repositories/rental-calendar.repository';
-import { CalendarStatus, Prisma } from '@prisma/client';
+import { CalendarStatus, Prisma } from '@/generated/prisma/client';
 import { startOfDay, endOfDay, eachDayOfInterval, startOfMonth, endOfMonth } from 'date-fns';
 
 @Injectable()

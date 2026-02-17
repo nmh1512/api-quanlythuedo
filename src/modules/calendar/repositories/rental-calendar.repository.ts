@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/database/prisma.service';
-import { RentalCalendar, Prisma, CalendarStatus } from '@prisma/client';
+import { RentalCalendar, Prisma, CalendarStatus } from '@/generated/prisma/client';
 
 @Injectable()
 export class RentalCalendarRepository {
@@ -53,7 +53,7 @@ export class RentalCalendarRepository {
                 },
                 rental: {
                     include: {
-                        user: true,
+                        customer: true,
                     },
                 },
             },

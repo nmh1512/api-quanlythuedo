@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { differenceInDays, startOfDay } from 'date-fns';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '@/generated/prisma/client';
 
 @Injectable()
 export class PricingService {

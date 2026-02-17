@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/database/prisma.service';
-import { Product, Prisma } from '@prisma/client';
+import { Product, Prisma } from '@/generated/prisma/client';
 
 @Injectable()
 export class ProductRepository {
@@ -63,7 +63,7 @@ export class ProductRepository {
             include: {
                 rental: {
                     include: {
-                        user: true
+                        customer: true
                     }
                 },
                 productItem: true

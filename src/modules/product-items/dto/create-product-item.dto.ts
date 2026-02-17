@@ -1,5 +1,5 @@
 import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
-import { ProductItemStatus } from '@prisma/client';
+import { ProductItemStatus } from '@/generated/prisma/client';
 
 export class CreateProductItemDto {
     @IsNumber()

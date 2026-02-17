@@ -14,7 +14,7 @@ export class AuthService {
 
     async login(dto: LoginDto) {
         const user = await this.userRepository.findByEmail(dto.email);
-        if (!user) {
+        if (!user || !user.password) {
             throw new UnauthorizedException('Invalid credentials');
         }
 

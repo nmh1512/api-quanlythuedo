@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, ParseIntPipe, Query, Patch } from '@nestjs/common';
 import { RentalsService } from '../services/rentals.service';
 import { CreateRentalDto } from '../dto/create-rental.dto';
 
@@ -22,5 +22,11 @@ export class RentalsController {
         return this.rentalsService.findOne(id);
     }
 
-    // Future: return, cancel
+    @Patch(':id/status')
+    async updateStatus(
+        @Param('id', ParseIntPipe) id: number,
+        @Body('status') status: any
+    ) {
+        return this.rentalsService.updateStatus(id, status);
+    }
 }

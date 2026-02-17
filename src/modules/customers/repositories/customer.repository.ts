@@ -1,48 +1,43 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/database/prisma.service';
-import { User, Prisma } from '@/generated/prisma/client';
+import { Customer, Prisma } from '@/generated/prisma/client';
 
 @Injectable()
-export class UserRepository {
+export class CustomerRepository {
     constructor(private readonly prisma: PrismaService) { }
 
-    async findByEmail(email: string): Promise<User | null> {
-        return this.prisma.user.findUnique({
-            where: { email, deletedAt: null },
-        });
-    }
-
-    async findById(id: number): Promise<User | null> {
-        return this.prisma.user.findUnique({
+    async findById(id: number): Promise<Customer | null> {
+        return this.prisma.customer.findUnique({
             where: { id, deletedAt: null },
         });
     }
 
-    async create(data: Prisma.UserCreateInput): Promise<User> {
-        return this.prisma.user.create({
+    async create(data: Prisma.CustomerCreateInput): Promise<Customer> {
+        return this.prisma.customer.create({
             data,
         });
     }
 
-    async update(id: number, data: Prisma.UserUpdateInput): Promise<User> {
-        return this.prisma.user.update({
+    async update(id: number, data: Prisma.CustomerUpdateInput): Promise<Customer> {
+        return this.prisma.customer.update({
             where: { id },
             data,
         });
     }
 
-    async search(query?: string) {
+    async search(query?: string): Promise<Customer[]> {
         if (!query) {
-            return this.prisma.user.findMany({
+            return this.prisma.customer.findMany({
                 where: { deletedAt: null },
                 take: 20,
             });
         }
-        return this.prisma.user.findMany({
+        return this.prisma.customer.findMany({
             where: {
                 deletedAt: null,
                 OR: [
                     { name: { contains: query } },
+                    { phone: { contains: query } },
                     { email: { contains: query } },
                 ],
             },

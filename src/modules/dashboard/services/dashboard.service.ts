@@ -17,7 +17,7 @@ export class DashboardService {
                 where: { status: { not: 'cancelled' } }
             }),
             this.prisma.rental.count({
-                where: { status: 'renting' }
+                where: { status: { in: ['confirmed', 'renting'] } }
             }),
             this.prisma.productItem.count({
                 where: { status: 'available' }
@@ -31,7 +31,7 @@ export class DashboardService {
             take: 5,
             orderBy: { createdAt: 'desc' },
             include: {
-                user: { select: { name: true } },
+                customer: { select: { name: true } },
                 rentalItems: {
                     include: { productItem: { include: { product: { select: { name: true } } } } }
                 }

@@ -5,7 +5,7 @@ import { CalendarService } from '@/modules/calendar/services/calendar.service';
 import { PricingService } from '@/modules/pricing/services/pricing.service';
 import { DepositService } from '@/modules/payments/services/deposit.service';
 import { CreateRentalDto } from '../dto/create-rental.dto';
-import { RentalStatus, CalendarStatus } from '@prisma/client';
+import { RentalStatus, CalendarStatus } from '@/generated/prisma/client';
 
 @Injectable()
 export class RentalsService {
@@ -45,9 +45,9 @@ export class RentalsService {
         );
 
         const rental = await this.rentalRepository.create({
-            user: { connect: { id: dto.userId } },
+            customer: { connect: { id: dto.customerId } },
             branch: { connect: { id: dto.branchId } },
-            status: RentalStatus.confirmed,
+            status: RentalStatus.renting,
             startDate,
             endDate,
             totalPrice,
@@ -58,6 +58,13 @@ export class RentalsService {
                     price: item.product.basePrice,
                 })),
             },
+            payments: {
+                create: {
+                    amount: dto.amountPaid,
+                    method: dto.paymentMethod,
+                    status: 'completed',
+                },
+            },
         });
 
         await this.calendarService.createCalendarEntries(
@@ -65,7 +72,7 @@ export class RentalsService {
             startDate,
             endDate,
             rental.id,
-            CalendarStatus.reserved
+            CalendarStatus.renting
         );
 
         for (const itemId of dto.productItemIds) {
@@ -81,5 +88,36 @@ export class RentalsService {
 
     async findOne(id: number) {
         return this.rentalRepository.findById(id);
+    }
+
+    async updateStatus(id: number, status: RentalStatus) {
+        const rental = await this.rentalRepository.findById(id);
+        if (!rental) {
+            throw new BadRequestException("Rental not found");
+        }
+
+        if (rental.status === RentalStatus.returned || rental.status === RentalStatus.cancelled) {
+            throw new BadRequestException("Rental is already finalized");
+        }
+
+        // 1. Update rental status
+        const updatedRental = await this.rentalRepository.update(id, {
+            status
+        });
+
+        // 2. If returned or cancelled, items go back to available
+        if (status === RentalStatus.returned || status === RentalStatus.cancelled) {
+            const productItemIds = (rental as any).rentalItems.map((item: any) => item.productItemId);
+            for (const itemId of productItemIds) {
+                await this.productItemRepository.update(itemId, {
+                    status: 'available'
+                });
+            }
+            // Also update calendar status if needed, but usually soft delete is enough 
+            // the calendar service removeCalendarEntries handles this if we call it
+            await this.calendarService.removeCalendarEntries(id);
+        }
+
+        return updatedRental;
     }
 }

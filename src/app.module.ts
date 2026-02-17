@@ -14,6 +14,9 @@ import { AvailabilityModule } from './modules/availability/availability.module';
 import { PricingModule } from './modules/pricing/pricing.module';
 import { POSModule } from './modules/pos/pos.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { CustomersModule } from './modules/customers/customers.module';
+import { ReportsModule } from './modules/reports/reports.module';
+import { UploadModule } from './modules/upload/upload.module';
 
 @Module({
   imports: [
@@ -32,6 +35,9 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
     PricingModule,
     POSModule,
     DashboardModule,
+    CustomersModule,
+    ReportsModule,
+    UploadModule,
   ],
 })
 export class AppModule { }
