@@ -1,25 +1,36 @@
 import { Injectable } from '@nestjs/common';
 import { UserRepository } from '../repositories/user.repository';
-import { Prisma } from '@/generated/prisma/client';
+import { Prisma, User } from '@/generated/prisma/client';
+import { BaseService } from '@/common/pagination/base.service';
+import { PaginationQueryDto } from '@/common/pagination/dto/pagination-query.dto';
+import { PaginatedResponse } from '@/common/pagination/interfaces/paginated-response.interface';
 
 @Injectable()
-export class UsersService {
-    constructor(private readonly userRepository: UserRepository) {}
+export class UsersService extends BaseService<User> {
+    constructor(private readonly userRepository: UserRepository) {
+        super();
+    }
 
-    async findAll(query?: string) {
-        // Basic search by name or email
-        // We need to extend UserRepository or use PrismaService directly if needed, 
-        // but UserRepository.prisma is private. Ideally we add a search method to UserRepository.
-        // For now let's assume we can add a method there or use what's available.
-        // Since I cannot easily modify UserRepository without seeing if it has search, 
-        // I will add a search method to UserRepository first.
-        return this.userRepository.search(query);
+    async findAll(query: PaginationQueryDto): Promise<PaginatedResponse<User>> {
+        const where: Prisma.UserWhereInput = query.q ? {
+            OR: [
+                { name: { contains: query.q } },
+                { email: { contains: query.q } },
+            ],
+        } : {};
+
+        return this.paginate(
+            this.userRepository,
+            query,
+            { where },
+            ['id', 'name', 'email', 'createdAt', 'updatedAt']
+        );
     }
 
     async create(data: Prisma.UserCreateInput) {
         return this.userRepository.create(data);
     }
-    
+
     async findById(id: number) {
         return this.userRepository.findById(id);
     }

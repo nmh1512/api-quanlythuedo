@@ -1,13 +1,31 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CategoryRepository } from '../repositories/category.repository';
 import { CreateCategoryDto } from '../dto/create-category.dto';
+import { UpdateCategoryDto } from '../dto/update-category.dto';
+import { Category, Prisma } from '@/generated/prisma/client';
+import { BaseService } from '@/common/pagination/base.service';
+import { PaginationQueryDto } from '@/common/pagination/dto/pagination-query.dto';
+import { PaginatedResponse } from '@/common/pagination/interfaces/paginated-response.interface';
 
 @Injectable()
-export class CategoriesService {
-    constructor(private readonly categoryRepository: CategoryRepository) { }
+export class CategoriesService extends BaseService<Category> {
+    constructor(private readonly categoryRepository: CategoryRepository) {
+        super();
+    }
 
-    async findAll() {
-        return this.categoryRepository.findAll();
+    async findAll(query: PaginationQueryDto): Promise<PaginatedResponse<Category>> {
+        const where: Prisma.CategoryWhereInput = {};
+
+        if (query.q) {
+            where.name = { contains: query.q };
+        }
+
+        return this.paginate(
+            this.categoryRepository,
+            query,
+            { where },
+            ['id', 'name', 'createdAt', 'updatedAt']
+        );
     }
 
     async findOne(id: number) {
@@ -25,7 +43,7 @@ export class CategoriesService {
         });
     }
 
-    async update(id: number, dto: any) {
+    async update(id: number, dto: UpdateCategoryDto) {
         return this.categoryRepository.update(id, dto);
     }
 

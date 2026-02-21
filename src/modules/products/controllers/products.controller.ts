@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, Query,
 import { ProductsService } from '../services/products.service';
 import { CreateProductDto } from '../dto/create-product.dto';
 import { UpdateProductDto } from '../dto/update-product.dto';
+import { PaginationQueryDto } from '@/common/pagination/dto/pagination-query.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
@@ -22,8 +23,10 @@ export class ProductsController {
     constructor(private readonly productsService: ProductsService) { }
 
     @Get()
-    async findAll(@Query('q') q?: string) {
-        return this.productsService.findAll(q);
+    async findAll(
+        @Query() query: PaginationQueryDto
+    ) {
+        return this.productsService.findAll(query);
     }
 
     @Get(':id')
@@ -35,7 +38,7 @@ export class ProductsController {
     @UseInterceptors(FileInterceptor('file', storageConfig))
     async create(
         @Body() createProductDto: CreateProductDto,
-        @UploadedFile() file?: any
+        @UploadedFile() file?: Express.Multer.File
     ) {
         return this.productsService.create(createProductDto, file);
     }
@@ -45,7 +48,7 @@ export class ProductsController {
     async update(
         @Param('id', ParseIntPipe) id: number,
         @Body() updateProductDto: UpdateProductDto,
-        @UploadedFile() file?: any
+        @UploadedFile() file?: Express.Multer.File
     ) {
         return this.productsService.update(id, updateProductDto, file);
     }

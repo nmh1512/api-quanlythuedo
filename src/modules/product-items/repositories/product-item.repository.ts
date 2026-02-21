@@ -26,6 +26,15 @@ export class ProductItemRepository {
         });
     }
 
+    async count(where: Prisma.ProductItemWhereInput = {}): Promise<number> {
+        return this.prisma.productItem.count({
+            where: {
+                ...where,
+                deletedAt: null,
+            },
+        });
+    }
+
     async findById(id: number): Promise<ProductItem | null> {
         return this.prisma.productItem.findUnique({
             where: { id, deletedAt: null },

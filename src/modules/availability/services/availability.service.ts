@@ -23,7 +23,7 @@ export class AvailabilityService {
             where: { productId, status: 'available' },
         });
 
-        const availableItems: any[] = [];
+        const availableItems: Exclude<Awaited<ReturnType<typeof this.productItemRepository.findById>>, null>[] = [];
         for (const item of items) {
             const isAvailable = await this.calendarService.checkItemAvailability(item.id, startDate, endDate);
             if (isAvailable) {

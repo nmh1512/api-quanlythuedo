@@ -31,22 +31,22 @@ export class UserRepository {
         });
     }
 
-    async search(query?: string) {
-        if (!query) {
-            return this.prisma.user.findMany({
-                where: { deletedAt: null },
-                take: 20,
-            });
-        }
+    async findAll(params: Prisma.UserFindManyArgs = {}): Promise<User[]> {
         return this.prisma.user.findMany({
+            ...params,
             where: {
-                deletedAt: null,
-                OR: [
-                    { name: { contains: query } },
-                    { email: { contains: query } },
-                ],
+                ...params.where,
+                deletedAt: null
             },
-            take: 20,
+        });
+    }
+
+    async count(where: Prisma.UserWhereInput = {}): Promise<number> {
+        return this.prisma.user.count({
+            where: {
+                ...where,
+                deletedAt: null
+            }
         });
     }
 }

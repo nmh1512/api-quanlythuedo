@@ -39,6 +39,15 @@ export class RentalRepository {
         });
     }
 
+    async count(where: Prisma.RentalWhereInput = {}): Promise<number> {
+        return this.prisma.rental.count({
+            where: {
+                ...where,
+                deletedAt: null,
+            },
+        });
+    }
+
     async findById(id: number): Promise<Rental | null> {
         return this.prisma.rental.findUnique({
             where: { id, deletedAt: null },

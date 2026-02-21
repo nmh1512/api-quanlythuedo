@@ -22,5 +22,5 @@ export class CreateProductDto {
 
     @IsArray()
     @IsOptional()
-    productImages?: any[];
+    productImages?: { url: string; isPrimary: boolean }[];
 }

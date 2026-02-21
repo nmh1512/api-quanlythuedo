@@ -6,10 +6,29 @@ import { Category, Prisma } from '@/generated/prisma/client';
 export class CategoryRepository {
     constructor(private readonly prisma: PrismaService) { }
 
-    async findAll(): Promise<Category[]> {
+    async findAll(params: Prisma.CategoryFindManyArgs = {}): Promise<Category[]> {
         return this.prisma.category.findMany({
-            where: { deletedAt: null },
-            include: { children: true },
+            ...params,
+            where: {
+                ...params.where,
+                deletedAt: null
+            },
+            include: {
+                ...params.include,
+                children: true,
+                _count: {
+                    select: { products: true }
+                }
+            },
+        });
+    }
+
+    async count(where: Prisma.CategoryWhereInput = {}): Promise<number> {
+        return this.prisma.category.count({
+            where: {
+                ...where,
+                deletedAt: null
+            }
         });
     }
 

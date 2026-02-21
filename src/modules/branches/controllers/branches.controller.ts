@@ -1,14 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, Query } from '@nestjs/common';
 import { BranchesService } from '../services/branches.service';
 import { CreateBranchDto } from '../dto/create-branch.dto';
+import { PaginationQueryDto } from '@/common/pagination/dto/pagination-query.dto';
 
 @Controller('branches')
 export class BranchesController {
     constructor(private readonly branchesService: BranchesService) { }
 
     @Get()
-    async findAll() {
-        return this.branchesService.findAll();
+    async findAll(@Query() query: PaginationQueryDto) {
+        return this.branchesService.findAll(query);
     }
 
     @Get(':id')
@@ -22,7 +23,7 @@ export class BranchesController {
     }
 
     @Patch(':id')
-    async update(@Param('id', ParseIntPipe) id: number, @Body() dto: any) {
+    async update(@Param('id', ParseIntPipe) id: number, @Body() dto: Partial<CreateBranchDto>) {
         return this.branchesService.update(id, dto);
     }
 

@@ -25,23 +25,22 @@ export class CustomerRepository {
         });
     }
 
-    async search(query?: string): Promise<Customer[]> {
-        if (!query) {
-            return this.prisma.customer.findMany({
-                where: { deletedAt: null },
-                take: 20,
-            });
-        }
+    async findAll(params: Prisma.CustomerFindManyArgs = {}): Promise<Customer[]> {
         return this.prisma.customer.findMany({
+            ...params,
             where: {
-                deletedAt: null,
-                OR: [
-                    { name: { contains: query } },
-                    { phone: { contains: query } },
-                    { email: { contains: query } },
-                ],
+                ...params.where,
+                deletedAt: null
             },
-            take: 20,
+        });
+    }
+
+    async count(where: Prisma.CustomerWhereInput = {}): Promise<number> {
+        return this.prisma.customer.count({
+            where: {
+                ...where,
+                deletedAt: null
+            }
         });
     }
 }

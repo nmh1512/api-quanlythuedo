@@ -12,4 +12,17 @@ export class ReportsController {
     ) {
         return this.reportsService.getCustomerSalesReport(startDate, endDate);
     }
+
+    @Get('daily')
+    async getDailyReport(@Query() query: { date?: string; page?: number; pageSize?: number }) {
+        return this.reportsService.getDailyReport(query);
+    }
+
+    @Get('overview')
+    async getOverviewReport(
+        @Query('startDate') startDate?: string,
+        @Query('endDate') endDate?: string,
+    ) {
+        return this.reportsService.getOverviewReport(startDate, endDate);
+    }
 }

@@ -1,15 +1,16 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, Query } from '@nestjs/common';
 import { ProductItemsService } from '../services/product-items.service';
 import { CreateProductItemDto } from '../dto/create-product-item.dto';
 import { UpdateProductItemDto } from '../dto/update-product-item.dto';
+import { PaginationQueryDto } from '@/common/pagination/dto/pagination-query.dto';
 
 @Controller('product-items')
 export class ProductItemsController {
     constructor(private readonly productItemsService: ProductItemsService) { }
 
     @Get()
-    async findAll() {
-        return this.productItemsService.findAll();
+    async findAll(@Query() query: PaginationQueryDto) {
+        return this.productItemsService.findAll(query);
     }
 
     @Get(':id')

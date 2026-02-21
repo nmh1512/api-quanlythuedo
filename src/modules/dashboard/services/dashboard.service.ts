@@ -6,11 +6,22 @@ export class DashboardService {
     constructor(private readonly prisma: PrismaService) { }
 
     async getStats() {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Start of today
+
+        const tomorrow = new Date(today);
+        tomorrow.setDate(today.getDate() + 1); // Start of tomorrow
+
+        const yesterday = new Date(today);
+        yesterday.setDate(today.getDate() - 1); // Start of yesterday
+
         const [
             totalRevenue,
             activeRentals,
             availableItems,
-            totalProducts
+            totalProducts,
+            todayRevenue,
+            yesterdayRevenue
         ] = await Promise.all([
             this.prisma.rental.aggregate({
                 _sum: { totalPrice: true },
@@ -24,6 +35,26 @@ export class DashboardService {
             }),
             this.prisma.product.count({
                 where: { deletedAt: null }
+            }),
+            this.prisma.rental.aggregate({
+                _sum: { totalPrice: true },
+                where: {
+                    status: { not: 'cancelled' },
+                    createdAt: {
+                        gte: today,
+                        lt: tomorrow
+                    }
+                }
+            }),
+            this.prisma.rental.aggregate({
+                _sum: { totalPrice: true },
+                where: {
+                    status: { not: 'cancelled' },
+                    createdAt: {
+                        gte: yesterday,
+                        lt: today
+                    }
+                }
             })
         ]);
 
@@ -43,6 +74,8 @@ export class DashboardService {
             activeRentals,
             availableItems,
             totalProducts,
+            todayRevenue: todayRevenue._sum.totalPrice || 0,
+            yesterdayRevenue: yesterdayRevenue._sum.totalPrice || 0,
             recentRentals
         };
     }

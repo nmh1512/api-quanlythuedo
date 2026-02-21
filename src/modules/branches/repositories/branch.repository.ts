@@ -6,9 +6,22 @@ import { Branch, Prisma } from '@/generated/prisma/client';
 export class BranchRepository {
     constructor(private readonly prisma: PrismaService) { }
 
-    async findAll(): Promise<Branch[]> {
+    async findAll(params: Prisma.BranchFindManyArgs = {}): Promise<Branch[]> {
         return this.prisma.branch.findMany({
-            where: { deletedAt: null },
+            ...params,
+            where: {
+                ...params.where,
+                deletedAt: null
+            },
+        });
+    }
+
+    async count(where: Prisma.BranchWhereInput = {}): Promise<number> {
+        return this.prisma.branch.count({
+            where: {
+                ...where,
+                deletedAt: null
+            }
         });
     }
 

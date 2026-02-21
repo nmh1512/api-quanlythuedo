@@ -1,13 +1,14 @@
 import { Controller, Get, Post, Body, Query, UseGuards } from '@nestjs/common';
 import { UsersService } from '../services/users.service';
 import { Prisma } from '@/generated/prisma/client';
+import { PaginationQueryDto } from '@/common/pagination/dto/pagination-query.dto';
 
 @Controller('users')
 export class UsersController {
-    constructor(private readonly usersService: UsersService) {}
+    constructor(private readonly usersService: UsersService) { }
 
     @Get()
-    async findAll(@Query('q') query: string) {
+    async findAll(@Query() query: PaginationQueryDto) {
         return this.usersService.findAll(query);
     }
 
