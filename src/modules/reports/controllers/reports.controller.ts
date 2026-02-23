@@ -1,5 +1,6 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { ReportsService } from '../services/reports.service';
+import { GetDailyReportDto } from '../dto/get-daily-report.dto';
 
 @Controller('reports')
 export class ReportsController {
@@ -14,7 +15,7 @@ export class ReportsController {
     }
 
     @Get('daily')
-    async getDailyReport(@Query() query: { date?: string; page?: number; pageSize?: number }) {
+    async getDailyReport(@Query() query: GetDailyReportDto) {
         return this.reportsService.getDailyReport(query);
     }
 

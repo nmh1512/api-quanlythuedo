@@ -1,14 +1,24 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/database/prisma.service';
-import { Prisma, RentalStatus } from '@/generated/prisma/client';
+import { Prisma, RentalStatus, Rental } from '@/generated/prisma/client';
+import { BaseService } from '@/common/pagination/base.service';
+import { RentalRepository } from '@/modules/rentals/repositories/rental.repository';
+import { PaginationQueryDto, SortOrder } from '@/common/pagination/dto/pagination-query.dto';
+import { startOfDay, endOfDay, startOfMonth, endOfMonth } from 'date-fns';
 
 @Injectable()
-export class ReportsService {
-    constructor(private readonly prisma: PrismaService) { }
+export class ReportsService extends BaseService<Rental> {
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly rentalRepository: RentalRepository
+    ) {
+        super();
+    }
 
     async getCustomerSalesReport(startDate?: string, endDate?: string) {
         const where: Prisma.RentalWhereInput = {
-            status: { not: RentalStatus.cancelled }
+            status: { not: RentalStatus.cancelled },
+            deletedAt: null
         };
 
         if (startDate || endDate) {
@@ -43,65 +53,78 @@ export class ReportsService {
         });
     }
 
-    async getDailyReport(params: { date?: string, page?: number, pageSize?: number }) {
-        const { date, page = 1, pageSize = 10 } = params;
-        const skip = (page - 1) * pageSize;
-        const take = Number(pageSize);
+    async getDailyReport(params: { date?: string, page?: number, limit?: number }) {
+        const { date, page = 1, limit = 10 } = params;
 
-        const target = date ? new Date(date) : new Date();
-        const start = new Date(target.getFullYear(), target.getMonth(), target.getDate(), 0, 0, 0, 0);
-        const end = new Date(target.getFullYear(), target.getMonth(), target.getDate(), 23, 59, 59, 999);
+        let targetDate: Date;
+        if (date) {
+            const [year, month, day] = date.split('-').map(Number);
+            targetDate = new Date(year, month - 1, day);
+        } else {
+            targetDate = new Date();
+        }
+
+        const start = startOfDay(targetDate);
+        const end = endOfDay(targetDate);
 
         const where: Prisma.RentalWhereInput = {
             status: { not: RentalStatus.cancelled },
-            createdAt: { gte: start, lte: end }
+            createdAt: { gte: start, lte: end },
+            deletedAt: null
         };
 
-        const [data, total, summary] = await Promise.all([
-            this.prisma.rental.findMany({
-                where,
-                include: {
-                    customer: { select: { id: true, name: true, phone: true } },
-                    rentalItems: {
-                        include: {
-                            productItem: {
-                                include: { product: { select: { name: true } } }
+        const queryDto = new PaginationQueryDto();
+        Object.assign(queryDto, {
+            page: Number(page),
+            limit: Number(limit),
+            sortBy: 'createdAt',
+            order: SortOrder.DESC
+        });
+
+        const [result, summary] = await Promise.all([
+            this.paginate(
+                this.rentalRepository,
+                queryDto,
+                {
+                    where,
+                    include: {
+                        customer: { select: { id: true, name: true, phone: true } },
+                        rentalItems: {
+                            include: {
+                                productItem: {
+                                    include: { product: { select: { name: true } } }
+                                }
                             }
                         }
-                    }
+                    },
+                    orderBy: { createdAt: 'desc' }
                 },
-                orderBy: { createdAt: 'desc' },
-                skip,
-                take
-            }),
-            this.prisma.rental.count({ where }),
+                ['id', 'createdAt', 'totalPrice']
+            ),
             this.prisma.rental.aggregate({
                 where,
                 _sum: { totalPrice: true }
             })
         ]);
 
-        return {
-            data,
-            meta: {
-                total,
-                page: Number(page),
-                pageSize: take,
-                totalPages: Math.ceil(total / take),
-                totalRevenue: Number(summary._sum?.totalPrice || 0)
-            }
-        };
+        (result.meta as any).totalRevenue = Number(summary._sum?.totalPrice || 0);
+
+        return result;
     }
+
+
+
 
     async getOverviewReport(startDate?: string, endDate?: string) {
         const now = new Date();
-        const start = startDate ? new Date(startDate) : new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
-        const end = endDate ? new Date(endDate) : new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+        const start = startDate ? startOfDay(new Date(startDate)) : startOfMonth(now);
+        const end = endDate ? endOfDay(new Date(endDate)) : endOfMonth(now);
 
         const rentals = await this.prisma.rental.findMany({
             where: {
-                status: { not: 'cancelled' },
-                createdAt: { gte: start, lte: end }
+                status: { not: RentalStatus.cancelled },
+                createdAt: { gte: start, lte: end },
+                deletedAt: null
             },
             select: { id: true, totalPrice: true, status: true, createdAt: true },
             orderBy: { createdAt: 'asc' }
@@ -124,4 +147,5 @@ export class ReportsService {
             daily: Object.values(grouped)
         };
     }
+
 }

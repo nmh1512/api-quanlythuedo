@@ -4,12 +4,12 @@ import * as bcrypt from 'bcryptjs';
 import { PrismaMariaDb } from '@prisma/adapter-mariadb';
 const adapter = new PrismaMariaDb(
     {
-        host: "localhost",
-        user: "root",
-        password: "",
-        database: "quanlythuedo",
-        port: 3306,
-        connectionLimit: 5
+        host: process.env.DATABASE_HOST || 'localhost',
+        user: process.env.DATABASE_USER || 'root',
+        password: process.env.DATABASE_PASSWORD || '',
+        database: process.env.DATABASE_NAME || 'quanlythuedo',
+        port: parseInt(process.env.DATABASE_PORT || '3306'),
+        connectionLimit: parseInt(process.env.DATABASE_CONNECTION_LIMIT || '5')
     },
 )
 const prisma = new PrismaClient({ adapter });

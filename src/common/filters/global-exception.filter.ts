@@ -14,6 +14,10 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         const response = ctx.getResponse<Response>();
         const request = ctx.getRequest<Request>();
 
+        console.error('--- Exception caught by GlobalExceptionFilter ---');
+        console.error(exception);
+        console.error('--------------------------------------------------');
+
         const status =
             exception instanceof HttpException
                 ? exception.getStatus()
