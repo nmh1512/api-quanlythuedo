@@ -1,13 +1,13 @@
 services:
-  db:
+  mysql:
     image: mysql:8.0
-    container_name: quanlythuedo_db
-    restart: always
+    container_name: rental-mysql
+    restart: unless-stopped
     env_file:
       - .env
     environment:
-      MYSQL_DATABASE: ${DB_NAME:-quanlythuedo_db}
-      MYSQL_USER: ${DB_USER:-quanlythuedo_user}
+      MYSQL_DATABASE: ${DB_NAME:-rental_db}
+      MYSQL_USER: ${DB_USER:-rental_user}
       MYSQL_PASSWORD: ${DB_PASSWORD:-password}
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
       TZ: Asia/Ho_Chi_Minh
@@ -16,7 +16,7 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
     networks:
-      - app-network
+      - rental-network
     healthcheck:
       test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost']
       interval: 10s
@@ -24,32 +24,45 @@ services:
       retries: 5
 
   api:
+    image: rental-api
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: quanlythuedo_api
-    restart: always
+    container_name: rental-api
+    restart: unless-stopped
     depends_on:
-      db:
+      mysql:
         condition: service_healthy
     env_file:
       - .env
     environment:
       DATABASE_URL: ${DATABASE_URL}
-      DATABASE_HOST: db
-      DATABASE_USER: ${DB_USER:-quanlythuedo_user}
+      DATABASE_HOST: mysql
+      DATABASE_USER: ${DB_USER:-rental_user}
       DATABASE_PASSWORD: ${DB_PASSWORD:-password}
-      DATABASE_NAME: ${DB_NAME:-quanlythuedo_db}
+      DATABASE_NAME: ${DB_NAME:-rental_db}
       DATABASE_PORT: 3306
       TZ: Asia/Ho_Chi_Minh
     ports:
-      - '3000:3000'
+      - '5001:3000'
     networks:
-      - app-network
+      - rental-network
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "require('http').get('http://localhost:3000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
 networks:
-  app-network:
-    name: quanlythuedo_network
+  rental-network:
+    name: rental-network
     driver: bridge
 
 volumes:

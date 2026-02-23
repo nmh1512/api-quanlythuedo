@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule } from './database/database.module';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { BranchesModule } from './modules/branches/branches.module';
@@ -39,5 +41,7 @@ import { UploadModule } from './modules/upload/upload.module';
     ReportsModule,
     UploadModule,
   ],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule { }
