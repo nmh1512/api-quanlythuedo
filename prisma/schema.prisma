@@ -123,7 +123,6 @@ model ProductItem {
   branchId  Int               @map("branch_id")
   itemCode  String            @unique @map("item_code") // e.g. BARCODE-001
   status    ProductItemStatus @default(available)
-  condition String?
   createdAt DateTime          @default(now()) @map("created_at")
   updatedAt DateTime          @updatedAt @map("updated_at")
   deletedAt DateTime?         @map("deleted_at")
@@ -216,8 +215,8 @@ model Penalty {
 
 model Property {
   id        Int      @id @default(autoincrement())
-  name      String   // e.g. "Color", "Size"
-  value     String   // e.g. "Red", "XL"
+  name      String // e.g. "Color", "Size"
+  value     String // e.g. "Red", "XL"
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 

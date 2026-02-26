@@ -109,28 +109,24 @@ async function main() {
             productId: 1,
             branchId: 1,
             status: 'available',
-            condition: 'New',
         },
         {
             itemCode: 'RWD-002-M',
             productId: 1,
             branchId: 1,
             status: 'available',
-            condition: 'Slightly Used',
         },
         {
             itemCode: 'SWS-001-S',
             productId: 2,
             branchId: 1,
             status: 'available',
-            condition: 'New',
         },
         {
             itemCode: 'LBM-001-M',
             productId: 3,
             branchId: 1,
             status: 'available',
-            condition: 'Excellent',
         },
     ];
 
@@ -141,7 +137,6 @@ async function main() {
             create: {
                 itemCode: item.itemCode,
                 status: item.status as any,
-                condition: item.condition,
                 product: { connect: { id: item.productId } },
                 branch: { connect: { id: item.branchId } },
             },

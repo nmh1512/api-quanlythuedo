@@ -36,6 +36,11 @@ export class PaginationQueryDto {
     @IsString()
     readonly status?: string;
 
+    @IsOptional()
+    @Type(() => Number)
+    @IsInt()
+    readonly categoryId?: number;
+
     get skip(): number {
         return (this.page - 1) * this.limit;
     }

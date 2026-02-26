@@ -58,7 +58,6 @@ export class ProductItemsService extends BaseService<ProductItem> {
     async create(dto: CreateProductItemDto) {
         return this.productItemRepository.create({
             itemCode: dto.itemCode,
-            condition: dto.condition,
             status: dto.status,
             product: { connect: { id: dto.productId } },
             branch: { connect: { id: dto.branchId } },

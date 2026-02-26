@@ -18,7 +18,4 @@ export class CreateProductItemDto {
     @IsOptional()
     status?: ProductItemStatus;
 
-    @IsString()
-    @IsOptional()
-    condition?: string;
 }

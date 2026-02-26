@@ -17,19 +17,44 @@ export class ProductsService extends BaseService<Product> {
     async findAll(query: PaginationQueryDto): Promise<PaginatedResponse<Product>> {
         const branchId = getBranchId();
 
-        const where: Prisma.ProductWhereInput = query.q ? {
-            OR: [
-                { name: { contains: query.q } },
-                { description: { contains: query.q } },
-                {
-                    productItems: {
-                        some: {
-                            itemCode: { contains: query.q }
+        const where: Prisma.ProductWhereInput = {
+            deletedAt: null,
+            AND: []
+        };
+
+        if (query.q) {
+            (where.AND as Prisma.ProductWhereInput[]).push({
+                OR: [
+                    { name: { contains: query.q } },
+                    { description: { contains: query.q } },
+                    {
+                        productItems: {
+                            some: {
+                                itemCode: { contains: query.q }
+                            }
                         }
                     }
-                }
-            ]
-        } : {};
+                ]
+            });
+        }
+
+        if (query.status && query.status !== 'all') {
+            if (query.status === 'available') {
+                (where.AND as Prisma.ProductWhereInput[]).push({
+                    productItems: { some: { status: 'available' } }
+                });
+            } else if (query.status === 'rented') {
+                (where.AND as Prisma.ProductWhereInput[]).push({
+                    productItems: { every: { status: 'rented' } }
+                });
+            }
+        }
+
+        if (query.categoryId) {
+            (where.AND as Prisma.ProductWhereInput[]).push({
+                categoryId: query.categoryId,
+            });
+        }
 
         return this.paginate(
             this.productRepository,

@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Query, Param } from '@nestjs/common';
 import { CustomersService } from '../services/customers.service';
-import { Prisma } from '@/generated/prisma/client';
 import { PaginationQueryDto } from '@/common/pagination/dto/pagination-query.dto';
+import { CreateCustomerDto } from '../dto/create-customer.dto';
 
 @Controller('customers')
 export class CustomersController {
@@ -13,7 +13,7 @@ export class CustomersController {
     }
 
     @Post()
-    async create(@Body() data: Prisma.CustomerCreateInput) {
+    async create(@Body() data: CreateCustomerDto) {
         return this.customersService.create(data);
     }
 
