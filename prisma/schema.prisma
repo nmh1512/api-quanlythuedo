@@ -100,6 +100,7 @@ model Product {
   category      Category       @relation(fields: [categoryId], references: [id])
   productImages ProductImage[]
   productItems  ProductItem[]
+  properties    Property[]
 
   @@map("products")
 }
@@ -211,4 +212,17 @@ model Penalty {
   rental Rental @relation(fields: [rentalId], references: [id])
 
   @@map("penalties")
+}
+
+model Property {
+  id        Int      @id @default(autoincrement())
+  name      String   // e.g. "Color", "Size"
+  value     String   // e.g. "Red", "XL"
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  products Product[]
+
+  @@unique([name, value])
+  @@map("properties")
 }

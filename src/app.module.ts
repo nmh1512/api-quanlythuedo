@@ -20,6 +20,9 @@ import { CustomersModule } from './modules/customers/customers.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { UploadModule } from './modules/upload/upload.module';
 
+import { BranchMiddleware } from './common/middleware/branch.middleware';
+import { RequestMethod, MiddlewareConsumer } from '@nestjs/common';
+
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -44,4 +47,10 @@ import { UploadModule } from './modules/upload/upload.module';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule { }
+export class AppModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(BranchMiddleware)
+      .forRoutes({ path: '*', method: RequestMethod.ALL });
+  }
+}

@@ -23,4 +23,13 @@ export class CreateProductDto {
     @IsArray()
     @IsOptional()
     productImages?: { url: string; isPrimary: boolean }[];
+
+    @IsArray()
+    @IsOptional()
+    properties?: { name: string; value: string }[];
+
+    @IsNumber()
+    @IsOptional()
+    @Type(() => Number)
+    quantity?: number;
 }

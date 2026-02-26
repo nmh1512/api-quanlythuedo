@@ -35,6 +35,7 @@ export class ProductRepository {
                 category: true,
                 productImages: true,
                 productItems: true,
+                properties: true,
             },
         });
     }

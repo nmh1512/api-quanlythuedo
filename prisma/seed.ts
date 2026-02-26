@@ -33,17 +33,23 @@ async function main() {
     });
     console.log('✅ Admin user seeded:', admin.email);
 
-    // 2. Default Branch
-    const branch = await prisma.branch.upsert({
-        where: { id: 1 },
-        update: {},
-        create: {
+    // 2. Branches
+    const branches = [
+        {
             id: 1,
-            name: 'Fashion Hub - Ho Chi Minh City',
+            name: 'Chi nhánh trung tâm',
             address: '123 Nguyen Hue, District 1, HCM',
         },
-    });
-    console.log('✅ Default branch seeded:', branch.name);
+    ];
+
+    for (const b of branches) {
+        await prisma.branch.upsert({
+            where: { id: b.id },
+            update: {},
+            create: b,
+        });
+    }
+    console.log('✅ Branches seeded');
 
     // 3. Categories
     const categories = [
