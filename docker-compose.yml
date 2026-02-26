@@ -47,6 +47,8 @@ services:
       - '5001:3000'
     networks:
       - rental-network
+    volumes:
+      - ./uploads:/app/uploads
     healthcheck:
       test:
         [
