@@ -6,8 +6,8 @@ export class CreateCustomerDto {
     name: string;
 
     @IsString({ message: 'Số điện thoại phải là chuỗi ký tự' })
-    @IsOptional()
-    phone?: string;
+    @IsNotEmpty({ message: 'Vui lòng nhập số điện thoại khách hàng' })
+    phone: string;
 
     @IsEmail({}, { message: 'Email không hợp lệ' })
     @IsOptional()

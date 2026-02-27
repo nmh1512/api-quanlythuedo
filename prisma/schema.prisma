@@ -46,7 +46,7 @@ model User {
 model Customer {
   id        Int       @id @default(autoincrement())
   name      String
-  phone     String?   @unique
+  phone     String    @unique
   email     String?   @unique
   address   String?
   createdAt DateTime  @default(now()) @map("created_at")

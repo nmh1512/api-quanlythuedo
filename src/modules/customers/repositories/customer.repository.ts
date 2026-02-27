@@ -25,6 +25,13 @@ export class CustomerRepository {
         });
     }
 
+    async softDelete(id: number): Promise<Customer> {
+        return this.prisma.customer.update({
+            where: { id },
+            data: { deletedAt: new Date() },
+        });
+    }
+
     async findAll(params: Prisma.CustomerFindManyArgs = {}): Promise<Customer[]> {
         return this.prisma.customer.findMany({
             ...params,
