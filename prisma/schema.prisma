@@ -30,6 +30,22 @@ enum CalendarStatus {
   blocked
 }
 
+enum PurchaseOrderType {
+  IN
+  OUT
+}
+
+enum PurchaseOrderStatus {
+  DRAFT
+  COMPLETED
+  CANCELLED
+}
+
+enum TransferType {
+  PURCHASE
+  DAMAGE
+}
+
 model User {
   id        Int       @id @default(autoincrement())
   email     String    @unique
@@ -39,6 +55,9 @@ model User {
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
   deletedAt DateTime? @map("deleted_at")
+
+  purchaseOrders PurchaseOrder[]
+  damageItems    DamageItem[]
 
   @@map("users")
 }
@@ -66,8 +85,10 @@ model Branch {
   updatedAt DateTime  @updatedAt @map("updated_at")
   deletedAt DateTime? @map("deleted_at")
 
-  productItems ProductItem[]
-  rentals      Rental[]
+  productItems   ProductItem[]
+  rentals        Rental[]
+  purchaseOrders PurchaseOrder[]
+  damageItems    DamageItem[]
 
   @@map("branches")
 }
@@ -101,6 +122,7 @@ model Product {
   productImages ProductImage[]
   productItems  ProductItem[]
   properties    Property[]
+  transferItems TransferItem[]
 
   @@map("products")
 }
@@ -224,4 +246,75 @@ model Property {
 
   @@unique([name, value])
   @@map("properties")
+}
+
+model Supplier {
+  id        Int       @id @default(autoincrement())
+  name      String
+  phone     String?
+  email     String?
+  address   String?
+  taxCode   String?   @map("tax_code")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  purchaseOrders PurchaseOrder[]
+
+  @@map("suppliers")
+}
+
+model PurchaseOrder {
+  id          Int                 @id @default(autoincrement())
+  orderCode   String              @unique @map("order_code")
+  type        PurchaseOrderType
+  status      PurchaseOrderStatus @default(DRAFT)
+  supplierId  Int?                @map("supplier_id")
+  branchId    Int                 @map("branch_id")
+  userId      Int                 @map("user_id")
+  totalAmount Decimal             @default(0) @map("total_amount")
+  discount    Decimal             @default(0)
+  paidAmount  Decimal             @default(0) @map("paid_amount")
+  note        String?             @db.Text
+  createdAt   DateTime            @default(now()) @map("created_at")
+  updatedAt   DateTime            @updatedAt @map("updated_at")
+  deletedAt   DateTime?           @map("deleted_at")
+
+  supplier Supplier?      @relation(fields: [supplierId], references: [id])
+  branch   Branch         @relation(fields: [branchId], references: [id])
+  user     User           @relation(fields: [userId], references: [id])
+
+  @@map("purchase_orders")
+}
+
+model DamageItem {
+  id           Int       @id @default(autoincrement())
+  disposalCode String    @unique @map("disposal_code")
+  branchId     Int       @map("branch_id")
+  userId       Int       @map("user_id")
+  totalAmount  Decimal   @default(0) @map("total_amount")
+  note         String?   @db.Text
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  branch Branch         @relation(fields: [branchId], references: [id])
+  user   User           @relation(fields: [userId], references: [id])
+
+  @@map("damage_items")
+}
+
+model TransferItem {
+  id           Int          @id @default(autoincrement())
+  transferType TransferType @map("transfer_type")
+  recordId     Int          @map("record_id")
+  productId    Int          @map("product_id")
+  quantity     Int          @default(0)
+  price        Decimal      @default(0) 
+  discount     Decimal      @default(0)
+  createdAt    DateTime     @default(now()) @map("created_at")
+
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("transfer_items")
 }
