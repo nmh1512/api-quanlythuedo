@@ -60,6 +60,17 @@ export class ProductRepository {
         });
     }
 
+    async hasActiveRentals(productId: number): Promise<boolean> {
+        const count = await this.prisma.productItem.count({
+            where: {
+                productId,
+                status: 'rented',
+                deletedAt: null
+            }
+        });
+        return count > 0;
+    }
+
     async findRentalHistory(productId: number) {
         return this.prisma.rentalItem.findMany({
             where: {

@@ -11,8 +11,13 @@ datasource db {
 enum ProductItemStatus {
   available
   rented
-  maintenance
   retired
+}
+
+enum ItemCondition {
+  NORMAL
+  MAINTENANCE
+  DAMAGED
 }
 
 enum RentalStatus {
@@ -109,14 +114,18 @@ model Category {
 }
 
 model Product {
-  id          Int       @id @default(autoincrement())
-  name        String
-  description String?
-  basePrice   Decimal   @default(0) @map("base_price") // Base rental price per day
-  categoryId  Int       @map("category_id")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
-  deletedAt   DateTime? @map("deleted_at")
+  id            Int       @id @default(autoincrement())
+  name          String
+  description   String?   @db.Text
+  basePrice     Decimal   @default(0) @map("base_price") // Base rental price per day
+  depositAmount Decimal?  @default(0) @map("deposit_amount")
+  minRentalDays Int?      @default(1) @map("min_rental_days")
+  maxRentalDays Int?      @map("max_rental_days")
+  termsAndConds String?   @db.Text @map("terms_and_conds")
+  categoryId    Int       @map("category_id")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
 
   category      Category       @relation(fields: [categoryId], references: [id])
   productImages ProductImage[]
@@ -145,6 +154,9 @@ model ProductItem {
   branchId  Int               @map("branch_id")
   itemCode  String            @unique @map("item_code") // e.g. BARCODE-001
   status    ProductItemStatus @default(available)
+  condition ItemCondition     @default(NORMAL)
+  price     Decimal?          @default(0)
+  note      String?           @db.Text
   createdAt DateTime          @default(now()) @map("created_at")
   updatedAt DateTime          @updatedAt @map("updated_at")
   deletedAt DateTime?         @map("deleted_at")
@@ -280,9 +292,9 @@ model PurchaseOrder {
   updatedAt   DateTime            @updatedAt @map("updated_at")
   deletedAt   DateTime?           @map("deleted_at")
 
-  supplier Supplier?      @relation(fields: [supplierId], references: [id])
-  branch   Branch         @relation(fields: [branchId], references: [id])
-  user     User           @relation(fields: [userId], references: [id])
+  supplier Supplier? @relation(fields: [supplierId], references: [id])
+  branch   Branch    @relation(fields: [branchId], references: [id])
+  user     User      @relation(fields: [userId], references: [id])
 
   @@map("purchase_orders")
 }
@@ -298,8 +310,8 @@ model DamageItem {
   updatedAt    DateTime  @updatedAt @map("updated_at")
   deletedAt    DateTime? @map("deleted_at")
 
-  branch Branch         @relation(fields: [branchId], references: [id])
-  user   User           @relation(fields: [userId], references: [id])
+  branch Branch @relation(fields: [branchId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
 
   @@map("damage_items")
 }
@@ -310,7 +322,7 @@ model TransferItem {
   recordId     Int          @map("record_id")
   productId    Int          @map("product_id")
   quantity     Int          @default(0)
-  price        Decimal      @default(0) 
+  price        Decimal      @default(0)
   discount     Decimal      @default(0)
   createdAt    DateTime     @default(now()) @map("created_at")
 

@@ -19,6 +19,8 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { CustomersModule } from './modules/customers/customers.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { UploadModule } from './modules/upload/upload.module';
+import { SuppliersModule } from './modules/suppliers/suppliers.module';
+import { InventoryModule } from './modules/inventory/inventory.module';
 
 import { BranchMiddleware } from './common/middleware/branch.middleware';
 import { RequestMethod, MiddlewareConsumer } from '@nestjs/common';
@@ -43,6 +45,8 @@ import { RequestMethod, MiddlewareConsumer } from '@nestjs/common';
     CustomersModule,
     ReportsModule,
     UploadModule,
+    SuppliersModule,
+    InventoryModule,
   ],
   controllers: [AppController],
   providers: [AppService],

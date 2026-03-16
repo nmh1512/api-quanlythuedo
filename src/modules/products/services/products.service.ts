@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { ProductRepository } from '../repositories/product.repository';
 import { CreateProductDto } from '../dto/create-product.dto';
 import { UpdateProductDto } from '../dto/update-product.dto';
@@ -79,7 +79,6 @@ export class ProductsService extends BaseService<Product> {
         );
     }
 
-
     async findOne(id: number) {
         const product = await this.productRepository.findById(id);
         if (!product) {
@@ -89,38 +88,47 @@ export class ProductsService extends BaseService<Product> {
     }
 
     async create(dto: CreateProductDto, file?: Express.Multer.File) {
-        const images = this.parseImagesFromDto(dto);
-        const properties = this.parsePropertiesFromDto(dto);
+        const images = dto.productImages ?? [];
+        const properties = dto.properties ?? [];
 
         if (file) {
             images.push({ url: `/uploads/${file.filename}`, isPrimary: true });
         }
 
-        const productItemsData: Prisma.ProductItemCreateManyProductInput[] = [];
-
-        const quantity = Number(dto.quantity) || 0;
+        const variants = dto.variants ?? [];
         const branchId = getBranchId();
 
-        if (quantity > 0 && branchId) {
-            for (let i = 0; i < quantity; i++) {
+        const productItemsData: Prisma.ProductItemCreateManyProductInput[] = [];
+        if (variants.length > 0 && branchId) {
+            variants.forEach((v, index) => {
                 const randomStr = Math.random().toString(36).substring(2, 8).toUpperCase();
-                productItemsData.push({
-                    branchId: branchId,
-                    itemCode: `ITEM-${Date.now()}-${randomStr}-${i}`,
-                    status: 'available',
-                });
-            }
+                for (let i = 0; i < v.quantity; i++) {
+                    const itemCode = v.itemCode ? `${v.itemCode}-${i}` : `ITEM-${Date.now()}-${randomStr}-${i}`;
+                    productItemsData.push({
+                        branchId: branchId,
+                        itemCode: itemCode,
+                        status: v.status || 'available',
+                        condition: v.condition || 'NORMAL',
+                        price: v.price || 0,
+                        note: v.note || ''
+                    });
+                }
+            });
         }
 
         return this.productRepository.create({
             name: dto.name,
             description: dto.description,
             basePrice: Number(dto.basePrice),
+            depositAmount: dto.depositAmount ? Number(dto.depositAmount) : undefined,
+            minRentalDays: dto.minRentalDays ? Number(dto.minRentalDays) : undefined,
+            maxRentalDays: dto.maxRentalDays ? Number(dto.maxRentalDays) : undefined,
+            termsAndConds: dto.termsAndConds,
             category: { connect: { id: Number(dto.categoryId) } },
             productImages: images.length > 0 ? {
                 create: images.map(img => ({
                     url: img.url,
-                    isPrimary: String(img.isPrimary) === 'true'
+                    isPrimary: img.isPrimary ?? false,
                 }))
             } : undefined,
             properties: properties.length > 0 ? {
@@ -136,35 +144,40 @@ export class ProductsService extends BaseService<Product> {
     }
 
     async update(id: number, dto: UpdateProductDto, file?: Express.Multer.File) {
-        const { productImages, properties: propsDto, categoryId, ...data } = dto;
+        const { productImages, properties, categoryId, ...data } = dto;
         const updateData: Prisma.ProductUpdateInput = { ...data };
 
         if (data.basePrice) updateData.basePrice = Number(data.basePrice);
+        if (data.depositAmount !== undefined) updateData.depositAmount = Number(data.depositAmount) || null;
+        if (data.minRentalDays !== undefined) updateData.minRentalDays = Number(data.minRentalDays) || null;
+        if (data.maxRentalDays !== undefined) updateData.maxRentalDays = Number(data.maxRentalDays) || null;
+        if (data.termsAndConds !== undefined) updateData.termsAndConds = data.termsAndConds;
 
         if (categoryId) {
             updateData.category = { connect: { id: Number(categoryId) } };
         }
 
-        const images = this.parseImagesFromDto(dto);
+        // productImages và properties đã được parse + validated từ DTO
+        const images = productImages ?? [];
         if (file) {
             images.push({ url: `/uploads/${file.filename}`, isPrimary: true });
         }
 
-        if (images.length > 0 || dto.productImages) {
+        if (images.length > 0 || productImages !== undefined) {
             updateData.productImages = {
                 deleteMany: {},
                 create: images.map(img => ({
                     url: img.url,
-                    isPrimary: String(img.isPrimary) === 'true'
+                    isPrimary: img.isPrimary ?? false,
                 }))
             };
         }
 
-        const properties = this.parsePropertiesFromDto(dto);
-        if (properties.length > 0 || propsDto) {
+        const props = properties ?? [];
+        if (props.length > 0 || properties !== undefined) {
             updateData.properties = {
-                set: [], // Disconnect old relations first
-                connectOrCreate: properties.map(p => ({
+                set: [],
+                connectOrCreate: props.map(p => ({
                     where: { name_value: { name: p.name, value: p.value } },
                     create: { name: p.name, value: p.value }
                 }))
@@ -174,61 +187,11 @@ export class ProductsService extends BaseService<Product> {
         return this.productRepository.update(id, updateData);
     }
 
-    private parseImagesFromDto(dto: CreateProductDto | UpdateProductDto): { url: string; isPrimary: boolean }[] {
-        if (dto.productImages && Array.isArray(dto.productImages)) {
-            return dto.productImages;
-        }
-
-        // Handle flat FormData keys like productImages[0][url]
-        const images: { url: string; isPrimary: boolean }[] = [];
-        const imageKeys = Object.keys(dto).filter(key => key.startsWith('productImages['));
-
-        imageKeys.forEach(key => {
-            const indexMatch = key.match(/\[(\d+)\]/);
-            const propMatch = key.match(/\]\[(\w+)\]/);
-
-            if (indexMatch && propMatch) {
-                const index = parseInt(indexMatch[1]);
-                const prop = propMatch[1];
-
-                if (!images[index]) images[index] = { url: '', isPrimary: false };
-                const val = (dto as Record<string, any>)[key];
-                if (prop === 'url') images[index].url = val;
-                if (prop === 'isPrimary') images[index].isPrimary = String(val) === 'true';
-            }
-        });
-
-        return images.filter(img => img && img.url);
-    }
-
-    private parsePropertiesFromDto(dto: CreateProductDto | UpdateProductDto): { name: string; value: string }[] {
-        if (dto.properties && Array.isArray(dto.properties)) {
-            return dto.properties;
-        }
-
-        // Handle flat FormData keys like properties[0][name]
-        const properties: { name: string; value: string }[] = [];
-        const propertyKeys = Object.keys(dto).filter(key => key.startsWith('properties['));
-
-        propertyKeys.forEach(key => {
-            const indexMatch = key.match(/\[(\d+)\]/);
-            const propMatch = key.match(/\]\[(\w+)\]/);
-
-            if (indexMatch && propMatch) {
-                const index = parseInt(indexMatch[1]);
-                const prop = propMatch[1];
-
-                if (!properties[index]) properties[index] = { name: '', value: '' };
-                const val = (dto as Record<string, any>)[key];
-                if (prop === 'name') properties[index].name = val;
-                if (prop === 'value') properties[index].value = val;
-            }
-        });
-
-        return properties.filter(p => p && p.name && p.value);
-    }
-
     async remove(id: number) {
+        const hasRentals = await this.productRepository.hasActiveRentals(id);
+        if (hasRentals) {
+            throw new BadRequestException('Không thể xóa sản phẩm đang có người thuê');
+        }
         return this.productRepository.softDelete(id);
     }
 
