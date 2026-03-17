@@ -9,9 +9,9 @@ datasource db {
 }
 
 enum ProductItemStatus {
-  available
-  rented
-  retired
+  AVAILABLE
+  RENTED
+  RETIRED
 }
 
 enum ItemCondition {
@@ -21,18 +21,18 @@ enum ItemCondition {
 }
 
 enum RentalStatus {
-  pending
-  confirmed
-  renting
-  returned
-  late
-  cancelled
+  PENDING
+  CONFIRMED
+  RENTING
+  RETURNED
+  LATE
+  CANCELLED
 }
 
 enum CalendarStatus {
-  reserved
-  renting
-  blocked
+  RESERVED
+  RENTING
+  BLOCKED
 }
 
 enum PurchaseOrderType {
@@ -153,7 +153,7 @@ model ProductItem {
   productId Int               @map("product_id")
   branchId  Int               @map("branch_id")
   itemCode  String            @unique @map("item_code") // e.g. BARCODE-001
-  status    ProductItemStatus @default(available)
+  status    ProductItemStatus @default(AVAILABLE)
   condition ItemCondition     @default(NORMAL)
   price     Decimal?          @default(0)
   note      String?           @db.Text
@@ -173,7 +173,7 @@ model Rental {
   id         Int          @id @default(autoincrement())
   customerId Int          @map("customer_id")
   branchId   Int          @map("branch_id")
-  status     RentalStatus @default(pending)
+  status     RentalStatus @default(PENDING)
   totalPrice Decimal      @default(0) @map("total_price")
   deposit    Decimal      @default(0)
   startDate  DateTime     @map("start_date")

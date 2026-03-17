@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { CalendarService } from '@/modules/calendar/services/calendar.service';
 import { ProductItemRepository } from '@/modules/product-items/repositories/product-item.repository';
+import { ProductItemStatus } from '@/generated/prisma/client';
 
 @Injectable()
 export class AvailabilityService {
@@ -11,7 +12,7 @@ export class AvailabilityService {
 
     async isItemAvailable(productItemId: number, startDate: Date, endDate: Date): Promise<boolean> {
         const item = await this.productItemRepository.findById(productItemId);
-        if (!item || item.status !== 'available') {
+        if (!item || item.status !== ProductItemStatus.AVAILABLE) {
             return false;
         }
 
@@ -20,7 +21,7 @@ export class AvailabilityService {
 
     async getAvailableItemsByProduct(productId: number, startDate: Date, endDate: Date) {
         const items = await this.productItemRepository.findAll({
-            where: { productId, status: 'available' },
+            where: { productId, status: ProductItemStatus.AVAILABLE },
         });
 
         const availableItems: Exclude<Awaited<ReturnType<typeof this.productItemRepository.findById>>, null>[] = [];

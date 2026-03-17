@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/database/prisma.service';
+import { RentalStatus, ProductItemStatus } from '@/generated/prisma/client';
 
 @Injectable()
 export class DashboardService {
@@ -25,13 +26,13 @@ export class DashboardService {
         ] = await Promise.all([
             this.prisma.rental.aggregate({
                 _sum: { totalPrice: true },
-                where: { status: { not: 'cancelled' } }
+                where: { status: { not: RentalStatus.CANCELLED } }
             }),
             this.prisma.rental.count({
-                where: { status: { in: ['confirmed', 'renting'] } }
+                where: { status: { in: [RentalStatus.CONFIRMED, RentalStatus.RENTING] } }
             }),
             this.prisma.productItem.count({
-                where: { status: 'available' }
+                where: { status: ProductItemStatus.AVAILABLE }
             }),
             this.prisma.product.count({
                 where: { deletedAt: null }
@@ -39,7 +40,7 @@ export class DashboardService {
             this.prisma.rental.aggregate({
                 _sum: { totalPrice: true },
                 where: {
-                    status: { not: 'cancelled' },
+                    status: { not: RentalStatus.CANCELLED },
                     createdAt: {
                         gte: today,
                         lt: tomorrow
@@ -49,7 +50,7 @@ export class DashboardService {
             this.prisma.rental.aggregate({
                 _sum: { totalPrice: true },
                 where: {
-                    status: { not: 'cancelled' },
+                    status: { not: RentalStatus.CANCELLED },
                     createdAt: {
                         gte: yesterday,
                         lt: today
@@ -70,12 +71,12 @@ export class DashboardService {
         });
 
         return {
-            totalRevenue: totalRevenue._sum.totalPrice || 0,
+            totalRevenue: totalRevenue._sum?.totalPrice || 0,
             activeRentals,
             availableItems,
             totalProducts,
-            todayRevenue: todayRevenue._sum.totalPrice || 0,
-            yesterdayRevenue: yesterdayRevenue._sum.totalPrice || 0,
+            todayRevenue: todayRevenue._sum?.totalPrice || 0,
+            yesterdayRevenue: yesterdayRevenue._sum?.totalPrice || 0,
             recentRentals
         };
     }

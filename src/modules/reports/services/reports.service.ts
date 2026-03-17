@@ -17,7 +17,7 @@ export class ReportsService extends BaseService<Rental> {
 
     async getCustomerSalesReport(startDate?: string, endDate?: string) {
         const where: Prisma.RentalWhereInput = {
-            status: { not: RentalStatus.cancelled },
+            status: { not: RentalStatus.CANCELLED },
             deletedAt: null
         };
 
@@ -68,7 +68,7 @@ export class ReportsService extends BaseService<Rental> {
         const end = endOfDay(targetDate);
 
         const where: Prisma.RentalWhereInput = {
-            status: { not: RentalStatus.cancelled },
+            status: { not: RentalStatus.CANCELLED },
             createdAt: { gte: start, lte: end },
             deletedAt: null
         };
@@ -122,7 +122,7 @@ export class ReportsService extends BaseService<Rental> {
 
         const rentals = await this.prisma.rental.findMany({
             where: {
-                status: { not: RentalStatus.cancelled },
+                status: { not: RentalStatus.CANCELLED },
                 createdAt: { gte: start, lte: end },
                 deletedAt: null
             },

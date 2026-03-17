@@ -5,7 +5,7 @@ import { CalendarService } from '@/modules/calendar/services/calendar.service';
 import { PricingService } from '@/modules/pricing/services/pricing.service';
 import { DepositService } from '@/modules/payments/services/deposit.service';
 import { CreateRentalDto } from '../dto/create-rental.dto';
-import { RentalStatus, CalendarStatus, Rental, Prisma, ProductItem, Product } from '@/generated/prisma/client';
+import { RentalStatus, CalendarStatus, Rental, Prisma, ProductItem, Product, ProductItemStatus } from '@/generated/prisma/client';
 import { BaseService } from '@/common/pagination/base.service';
 import { PaginationQueryDto } from '@/common/pagination/dto/pagination-query.dto';
 import { PaginatedResponse } from '@/common/pagination/interfaces/paginated-response.interface';
@@ -29,7 +29,7 @@ export class RentalsService extends BaseService<Rental> {
         const items: (ProductItem & { product: Product })[] = [];
         for (const itemId of dto.productItemIds) {
             const item = await this.productItemRepository.findById(itemId);
-            if (!item || item.status !== 'available') {
+            if (!item || item.status !== ProductItemStatus.AVAILABLE) {
                 throw new BadRequestException(`Item ${itemId} is not available`);
             }
 
@@ -52,7 +52,7 @@ export class RentalsService extends BaseService<Rental> {
         const rental = await this.rentalRepository.create({
             customer: { connect: { id: dto.customerId } },
             branch: { connect: { id: dto.branchId } },
-            status: RentalStatus.renting,
+            status: RentalStatus.RENTING,
             startDate,
             endDate,
             totalPrice,
@@ -77,11 +77,11 @@ export class RentalsService extends BaseService<Rental> {
             startDate,
             endDate,
             rental.id,
-            CalendarStatus.renting
+            CalendarStatus.RENTING
         );
 
         for (const itemId of dto.productItemIds) {
-            await this.productItemRepository.update(itemId, { status: 'rented' });
+            await this.productItemRepository.update(itemId, { status: ProductItemStatus.RENTED });
         }
 
         return rental;
@@ -106,8 +106,8 @@ export class RentalsService extends BaseService<Rental> {
         }
 
         if (status && status !== 'all') {
-            // Note: need to map it carefully if the database enum does not match case
-            where.status = status as RentalStatus;
+            // Mapping query param to enum case-insensitively if needed, but here we expect uppercase matching
+            where.status = status.toUpperCase() as RentalStatus;
         }
 
         return this.paginate(
@@ -131,7 +131,7 @@ export class RentalsService extends BaseService<Rental> {
             throw new BadRequestException("Rental not found");
         }
 
-        if (rental.status === RentalStatus.returned || rental.status === RentalStatus.cancelled) {
+        if (rental.status === RentalStatus.RETURNED || rental.status === RentalStatus.CANCELLED) {
             throw new BadRequestException("Rental is already finalized");
         }
 
@@ -141,11 +141,11 @@ export class RentalsService extends BaseService<Rental> {
         });
 
         // 2. If returned or cancelled, items go back to available
-        if (status === RentalStatus.returned || status === RentalStatus.cancelled) {
+        if (status === RentalStatus.RETURNED || status === RentalStatus.CANCELLED) {
             const productItemIds = (rental as Rental & { rentalItems: { productItemId: number }[] }).rentalItems.map((item) => item.productItemId);
             for (const itemId of productItemIds) {
                 await this.productItemRepository.update(itemId, {
-                    status: 'available'
+                    status: ProductItemStatus.AVAILABLE
                 });
             }
             // Also update calendar status if needed, but usually soft delete is enough 

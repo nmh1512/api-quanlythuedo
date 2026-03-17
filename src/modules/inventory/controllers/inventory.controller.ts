@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Query, UseGuards, Request } from '@nestjs/common';
 import { InventoryService } from '../services/inventory.service';
-import { CreateReceiveDto, CreateIssueDto, CreateDisposalDto } from '../dto/inventory.dto';
+import { CreateReceiveDto, CreateDisposalDto } from '../dto/inventory.dto';
 import { PaginationQueryDto } from '@/common/pagination/dto/pagination-query.dto';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 
@@ -19,15 +19,11 @@ export class InventoryController {
         return this.inventoryService.createReceive(req.user.id, dto);
     }
 
-    @Get('issue')
-    findAllIssue(@Query() query: PaginationQueryDto) {
-        return this.inventoryService.findAllIssue(query);
+    @Get('history')
+    findAllHistory(@Query() query: PaginationQueryDto) {
+        return this.inventoryService.findAllHistory(query);
     }
 
-    @Post('issue')
-    createIssue(@Request() req, @Body() dto: CreateIssueDto) {
-        return this.inventoryService.createIssue(req.user.id, dto);
-    }
 
     @Get('disposal')
     findAllDisposal(@Query() query: PaginationQueryDto) {

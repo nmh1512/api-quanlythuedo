@@ -4,7 +4,7 @@ import { PricingService } from '@/modules/pricing/services/pricing.service';
 import { DepositService } from '@/modules/payments/services/deposit.service';
 import { ProductItemRepository } from '@/modules/product-items/repositories/product-item.repository';
 import { RentalRepository } from '@/modules/rentals/repositories/rental.repository';
-import { ProductItem, Product } from '@/generated/prisma/client';
+import { ProductItem, Product, ProductItemStatus } from '@/generated/prisma/client';
 
 @Injectable()
 export class POSService {
@@ -23,7 +23,7 @@ export class POSService {
         }
         const item = rawItem as ProductItem & { product: Product };
 
-        if (item.status !== 'available') {
+        if (item.status !== ProductItemStatus.AVAILABLE) {
             throw new BadRequestException(`Item status is ${item.status}`);
         }
 

@@ -3,14 +3,18 @@ import { ProductRepository } from '../repositories/product.repository';
 import { CreateProductDto } from '../dto/create-product.dto';
 import { UpdateProductDto } from '../dto/update-product.dto';
 import { BaseService } from '@/common/pagination/base.service';
-import { Product, Prisma } from '@/generated/prisma/client';
+import { Product, Prisma, ProductItemStatus } from '@/generated/prisma/client';
 import { PaginationQueryDto } from '@/common/pagination/dto/pagination-query.dto';
 import { PaginatedResponse } from '@/common/pagination/interfaces/paginated-response.interface';
 import { getBranchId } from '@/common/branch-context';
+import { PrismaService } from '@/database/prisma.service';
 
 @Injectable()
 export class ProductsService extends BaseService<Product> {
-    constructor(private readonly productRepository: ProductRepository) {
+    constructor(
+        private readonly productRepository: ProductRepository,
+        private readonly prisma: PrismaService
+    ) {
         super();
     }
 
@@ -39,13 +43,14 @@ export class ProductsService extends BaseService<Product> {
         }
 
         if (query.status && query.status !== 'all') {
-            if (query.status === 'available') {
+            const status = query.status.toUpperCase();
+            if (status === ProductItemStatus.AVAILABLE) {
                 (where.AND as Prisma.ProductWhereInput[]).push({
-                    productItems: { some: { status: 'available' } }
+                    productItems: { some: { status: ProductItemStatus.AVAILABLE } }
                 });
-            } else if (query.status === 'rented') {
+            } else if (status === ProductItemStatus.RENTED) {
                 (where.AND as Prisma.ProductWhereInput[]).push({
-                    productItems: { every: { status: 'rented' } }
+                    productItems: { every: { status: ProductItemStatus.RENTED } }
                 });
             }
         }
@@ -95,28 +100,11 @@ export class ProductsService extends BaseService<Product> {
             images.push({ url: `/uploads/${file.filename}`, isPrimary: true });
         }
 
-        const variants = dto.variants ?? [];
         const branchId = getBranchId();
+        const randomStr = Math.random().toString(36).substring(2, 8).toUpperCase();
 
-        const productItemsData: Prisma.ProductItemCreateManyProductInput[] = [];
-        if (variants.length > 0 && branchId) {
-            variants.forEach((v, index) => {
-                const randomStr = Math.random().toString(36).substring(2, 8).toUpperCase();
-                for (let i = 0; i < v.quantity; i++) {
-                    const itemCode = v.itemCode ? `${v.itemCode}-${i}` : `ITEM-${Date.now()}-${randomStr}-${i}`;
-                    productItemsData.push({
-                        branchId: branchId,
-                        itemCode: itemCode,
-                        status: v.status || 'available',
-                        condition: v.condition || 'NORMAL',
-                        price: v.price || 0,
-                        note: v.note || ''
-                    });
-                }
-            });
-        }
 
-        return this.productRepository.create({
+        const createData: any = {
             name: dto.name,
             description: dto.description,
             basePrice: Number(dto.basePrice),
@@ -137,10 +125,22 @@ export class ProductsService extends BaseService<Product> {
                     create: { name: p.name, value: p.value }
                 }))
             } : undefined,
-            productItems: productItemsData.length > 0 ? {
-                create: productItemsData
-            } : undefined
-        });
+        };
+
+        if (dto.quantity && dto.quantity > 0 && branchId) {
+            createData.productItems = {
+                create: Array.from({ length: dto.quantity }).map((_, i) => ({
+                    branchId: branchId,
+                    itemCode: `ITEM-${Date.now()}-${randomStr}-${i}`,
+                    status: ProductItemStatus.AVAILABLE,
+                    condition: 'NORMAL',
+                    price: Number(dto.basePrice),
+                    note: 'Hệ thống tự động tạo'
+                }))
+            };
+        }
+
+        return this.productRepository.create(createData);
     }
 
     async update(id: number, dto: UpdateProductDto, file?: Express.Multer.File) {

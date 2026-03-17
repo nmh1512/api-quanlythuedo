@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/database/prisma.service';
-import { Product, Prisma } from '@/generated/prisma/client';
+import { Product, Prisma, ProductItemStatus } from '@/generated/prisma/client';
 
 @Injectable()
 export class ProductRepository {
@@ -64,7 +64,7 @@ export class ProductRepository {
         const count = await this.prisma.productItem.count({
             where: {
                 productId,
-                status: 'rented',
+                status: ProductItemStatus.RENTED,
                 deletedAt: null
             }
         });

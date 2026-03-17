@@ -33,33 +33,6 @@ export class ProductPropertyDto {
     value: string;
 }
 
-export class ProductVariantDto {
-    @IsString()
-    @IsOptional()
-    itemCode?: string;
-
-    @IsString()
-    @IsOptional()
-    status?: ProductItemStatus;
-
-    @IsString()
-    @IsOptional()
-    condition?: ItemCondition;
-
-    @IsNumber({}, { message: 'Số lượng phải là số' })
-    @IsNotEmpty()
-    @Type(() => Number)
-    quantity: number;
-
-    @IsNumber({}, { message: 'Giá phải là số' })
-    @IsOptional()
-    @Type(() => Number)
-    price?: number;
-
-    @IsString()
-    @IsOptional()
-    note?: string;
-}
 
 export class CreateProductDto {
     @IsString({ message: 'Tên sản phẩm phải là chuỗi ký tự' })
@@ -128,16 +101,8 @@ export class CreateProductDto {
     })
     properties?: ProductPropertyDto[];
 
-    @IsArray({ message: 'Dữ liệu phân loại sản phẩm không hợp lệ' })
-    @ValidateNested({ each: true })
+    @IsNumber({}, { message: 'Số lượng phải là số' })
     @IsOptional()
-    @Transform(({ value }) => {
-        const parsed = typeof value === 'string'
-            ? (() => { try { return JSON.parse(value); } catch { return []; } })()
-            : value;
-        return Array.isArray(parsed)
-            ? plainToInstance(ProductVariantDto, parsed)
-            : [];
-    })
-    variants?: ProductVariantDto[];
+    @Type(() => Number)
+    quantity?: number;
 }

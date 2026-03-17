@@ -12,7 +12,7 @@ export class CalendarService {
         startDate: Date,
         endDate: Date,
         rentalId: number,
-        status: CalendarStatus = CalendarStatus.reserved,
+        status: CalendarStatus = CalendarStatus.RESERVED,
     ) {
         const dates = eachDayOfInterval({
             start: startOfDay(startDate),

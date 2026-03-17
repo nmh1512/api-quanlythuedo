@@ -108,25 +108,25 @@ async function main() {
             itemCode: 'RWD-001-L',
             productId: 1,
             branchId: 1,
-            status: 'available',
+            status: 'AVAILABLE',
         },
         {
             itemCode: 'RWD-002-M',
             productId: 1,
             branchId: 1,
-            status: 'available',
+            status: 'AVAILABLE',
         },
         {
             itemCode: 'SWS-001-S',
             productId: 2,
             branchId: 1,
-            status: 'available',
+            status: 'AVAILABLE',
         },
         {
             itemCode: 'LBM-001-M',
             productId: 3,
             branchId: 1,
-            status: 'available',
+            status: 'AVAILABLE',
         },
     ];
 

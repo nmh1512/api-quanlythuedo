@@ -49,8 +49,8 @@ export class CreateReceiveDto {
     orderCode: string;
 
     @IsInt()
-    @IsNotEmpty()
-    supplierId: number;
+    @IsOptional()
+    supplierId?: number;
 
     @IsInt()
     @IsNotEmpty()
@@ -73,27 +73,6 @@ export class CreateReceiveDto {
     items: CreateTransferItemDto[];
 }
 
-export class CreateIssueDto {
-    @IsString()
-    @IsNotEmpty()
-    orderCode: string;
-
-    @IsInt()
-    @IsNotEmpty()
-    branchId: number;
-
-    @IsInt()
-    @IsOptional()
-    supplierId?: number;
-
-    @IsString()
-    @IsOptional()
-    note?: string;
-
-    @ValidateNested({ each: true })
-    @Type(() => CreateTransferItemDto)
-    items: CreateTransferItemDto[];
-}
 
 export class CreateDisposalDto {
     @IsString()
